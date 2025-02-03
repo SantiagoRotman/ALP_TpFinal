@@ -1,7 +1,10 @@
+{-# OPTIONS_GHC -Wincomplete-patterns #-}
+
 module BuiltIn where
 
 import Prelude hiding ( const )
 import Control.Monad
+import Debug.Trace
 import Lang
 
 instance Num Const where
@@ -13,7 +16,7 @@ instance Num Const where
     negate (CInt x) = CInt (negate x)
 
 instance Ord Const where
-  compare (CInt x) (CInt y) = compare x y
+    compare (CInt x) (CInt y) = compare x y
 
 evalArithmetic :: Term -> Maybe Const 
 evalArithmetic (TConst c) = Just c
@@ -28,9 +31,8 @@ is_2 :: Term -> Term -> Maybe [Subst]
 is_2 (TVar var) term = evalArithmetic term >>= (\a -> Just [(var, TConst a)])
 is_2 term1 term2 = do 
     res <- evalArithmetic term2
-    guard (term1 /= TConst res)
+    guard (term1 == TConst res)
     return []
-is_2 _ _ = Nothing
 
 gt_2 :: Term -> Term -> Maybe Bool
 gt_2 term1 term2 = do 

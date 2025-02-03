@@ -3,11 +3,10 @@ module Unify (runUnifier, solveQuery, areEquals) where
 import Prelude hiding ( const )
 import Lang
 import Control.Monad.State
-import Control.Monad.Reader
+--import Control.Monad.Reader
 import Data.Maybe
 
 import Global
-import MonadPL
 import BuiltIn
 import Debug.Trace
 
@@ -161,17 +160,24 @@ solveTermBuiltIn glbEnv i substs (CTerm "\\=" [t1,t2]) = do
     case result of
         Just xs -> return $ RLeaf Nothing
         Nothing -> return $ RLeaf $ Just substs
+solveTermBuiltIn glbEnv i substs (CTerm "\\+" [t]) = do
+    let result = solveTerm glbEnv i substs (applySubstitutions t substs)
+    if hasResult result 
+        then return $ RLeaf Nothing
+        else return $ RLeaf $ Just substs
 solveTermBuiltIn glbEnv i substs (CTerm "is" [t1,t2]) = do
     let result = is_2 (applySubstitutions t1 substs) (applySubstitutions t2 substs)
+    --_ <- trace (show result) (Just $ RLeaf Nothing)
     result' <- runUnifyM_ (mergeSubstitutions' substs result) i
     return $ RLeaf $ Just result'
 solveTermBuiltIn glbEnv i substs (CTerm ">" [t1,t2])  = generalBinaryFun gt_2 (boolToResult substs) substs t1 t2 
 solveTermBuiltIn glbEnv i substs (CTerm "<" [t1,t2])  = generalBinaryFun lt_2 (boolToResult substs) substs t1 t2  
 solveTermBuiltIn glbEnv i substs (CTerm ">=" [t1,t2]) = generalBinaryFun gte_2 (boolToResult substs) substs t1 t2  
 solveTermBuiltIn glbEnv i substs (CTerm "print" body) = do
-    let xs = ppTerms $ map (\t -> (applySubstitutions t substs)) body
-    -- let xs' = map (\t -> ppTerm (applySubstitutions t substs)) body
-    -- mapM_ (\s -> trace s (Just $ RLeaf Nothing)) xs'
+    let substs' = aggregateSubsts substs
+    let xs = ppTerms $ map (`applySubstitutions` substs') body
+    let xs' = map (\t -> ppTerm (applySubstitutions t substs')) body
+    mapM_ (\s -> trace s (Just $ RLeaf Nothing)) xs'
     return $ RLeaf $ Just (substs ++ [("_PRINT_", TConst (CString ( xs)))])
 solveTermBuiltIn glbEnv i substs _ = Nothing
 
@@ -185,7 +191,10 @@ solveTermKB glbEnv i substs t = let
     in if null results then RLeaf Nothing else RNode results
 
 solveTerm :: GlEnv -> Int -> [Subst] -> Term -> ResultsTree
-solveTerm glbEnv i s t | if getTrace glbEnv then trace ("solveTerm: " ++ show i ++ ", " ++ ppTerm t) False else False = undefined
+solveTerm glbEnv i s t | if getTrace glbEnv then
+                             trace ("solveTerm: " ++ show i ++ ", " ++ ppTerm (applySubstitutions t s) 
+                             ++ ", result: " ++ ppResultsTreeInLine (fromMaybe (solveTermKB glbEnv i s t) (solveTermBuiltIn glbEnv i s t))) False 
+                             else False = undefined
 solveTerm glbEnv i substs t = fromMaybe (solveTermKB glbEnv i substs t) (solveTermBuiltIn glbEnv i substs t)
 
 -----------------------------------------------------

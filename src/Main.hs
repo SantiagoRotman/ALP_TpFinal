@@ -2,7 +2,7 @@
 
 {-|
 Module      : Main
-Description : Compilador de FD4.
+Description : Compilador de Prolog.
 -}
 
 module Main where
@@ -100,7 +100,8 @@ loadFile f = do
 compileFile ::  MonadPL m => FilePath -> m ()
 compileFile f = do
     i <- getInter
-    setInter False
+    m <- getMode
+    setTrace $ m == Debug 
     when i $ printFD4 ("Abriendo "++f++"...")
     expresions <- loadFile f
     mapM_ handleExpr expresions
@@ -122,7 +123,7 @@ handleExpr q@(Query tree) = do
               let a = runUnifier solveQuery glb q
               printFD4 $ ppResultsTree a
 handleExpr e = do 
-  printFD4 $ ppExpr e
+  --printFD4 $ ppExpr e
   addClause e
 
 printResultInteractive' :: (MonadPL m) => Int -> ResultsTree -> m Int
@@ -235,7 +236,9 @@ handleCommand cmd = do
                           CompileFile f        -> compileFile f
                       return True
        Reload ->  return True -- eraseLastFileDecls >> (getLastFile >>= compileFile) >> return True
-       PPrint e   -> return True -- printPhrase e >> return True
+       PPrint e   -> do 
+        e' <- parseIO "<interactive>" expr e
+        printFD4 (ppExpr e') >> return True
        Trace b    -> setTrace b  >> return True -- typeCheckPhrase e >> return True
 
 compilePhrase ::  MonadPL m => String -> m ()

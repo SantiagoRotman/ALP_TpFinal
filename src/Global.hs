@@ -20,6 +20,7 @@ data Mode =
     Interactive
   | Eval
   | Debug
+  deriving (Show, Eq)
 
 -- | Valor del estado inicial
 initialEnv :: GlEnv

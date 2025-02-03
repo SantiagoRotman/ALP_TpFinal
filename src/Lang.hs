@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE EmptyDataDeriving #-}
 
@@ -96,3 +95,7 @@ isNotEmptyLeaf (RLeaf Nothing) = False
 isNotEmptyLeaf (RLeaf _) = True
 isNotEmptyLeaf _ = True
 
+hasResult :: ResultsTree -> Bool
+hasResult (RLeaf (Just xs)) = True
+hasResult (RNode xs) = any hasResult xs
+hasResult _ = False

@@ -96,25 +96,25 @@ term2doc :: Term -> ParensColMonad (Doc AnsiStyle)
 term2doc (TConst const)    = return $ const2doc const
 term2doc (TAtom at)        = return $ atom2doc defaultColor at
 term2doc (TVar var)        = return $ var2doc var
-term2doc (CTerm head body) = do
-  let head' = atom2doc defaultColor head
+term2doc (CTerm thead body) = do
+  let thead' = atom2doc defaultColor thead
   parCol <- getCol
   nextCol
   body' <- terms2doc body
   prevCol
-  return $ head' <> colParens parCol body'
+  return $ thead' <> colParens parCol body'
 
 termWithColor2doc :: ColorTy -> Term -> ParensColMonad (Doc AnsiStyle)
 termWithColor2doc col (TConst const)    = return $ const2doc const
 termWithColor2doc col (TAtom at)        = return $ atom2doc col at
 termWithColor2doc col (TVar var)        = return $ var2doc var
-termWithColor2doc col (CTerm head body) = do
-  let head' = atom2doc col head
+termWithColor2doc col (CTerm thead body) = do
+  let thead' = atom2doc col thead
   parCol <- getCol
   nextCol
   body' <- terms2doc body
   prevCol
-  return $ head' <> colParens parCol body'
+  return $ thead' <> colParens parCol body'
   
 terms2doc :: [Term] -> ParensColMonad (Doc AnsiStyle)
 terms2doc ts = do
@@ -136,9 +136,9 @@ expr2doc (Query tree)  = do
   body <- opTree2doc False tree
   return $ opColor (pretty "?-") <+> body
 expr2doc (Rule t tree) = do
-    head <- termWithColor2doc defColor t
+    thead <- termWithColor2doc defColor t
     body <- opTree2doc False tree
-    return $ hsep [head,opColor (pretty ":-"), body]
+    return $ hsep [thead,opColor (pretty ":-"), body]
 
 parenIf :: Bool -> Doc AnsiStyle -> ParensColMonad (Doc AnsiStyle)
 parenIf True d = do
@@ -195,27 +195,34 @@ subst2doc (var, t) = let (t',_) = runState (term2doc t) (parenColList, 0) in
     hsep [var2doc var, pretty "=", t'] 
 
 substs2doc :: [Subst] -> Doc AnsiStyle
-substs2doc xs = let xs' = map subst2doc (handleSubsts xs) in getPrints xs <> hsep (punctuate comma xs')
+substs2doc xs = let xs' = map subst2doc (handleSubsts xs) in if null xs' then pretty "Yes" else getPrints xs <> hsep (punctuate comma xs')
 
 ppSubsts :: [Subst] -> String
 ppSubsts = render . substs2doc
 
 result2doc :: Result -> Doc AnsiStyle
-result2doc Nothing   = pretty "No" <> line
-result2doc (Just []) = pretty "Yes" <> line
+result2doc Nothing   = pretty "False" <> line
+result2doc (Just []) = pretty "True" <> line
 result2doc (Just xs) = substs2doc xs <> line
-
--- Pretty-printing function
-resultsTree2doc :: ResultsTree -> Doc AnsiStyle
-resultsTree2doc (RLeaf result) = result2doc result
-resultsTree2doc (RNode children) = line <> indent 2 (hsep $ punctuate comma (map resultsTree2doc children))
-
-ppResult :: Result -> String
-ppResult = render . result2doc
 
 ppResultsTree :: ResultsTree -> String
 ppResultsTree (RLeaf result) = render $ result2doc result
 ppResultsTree (RNode children) = concatMap ppResultsTree children
+
+result2doc_ :: Result -> Doc AnsiStyle
+result2doc_ Nothing   = pretty "False" 
+result2doc_ (Just []) = pretty "True" 
+result2doc_ (Just xs) = substs2doc xs 
+
+resultsTree2doc :: ResultsTree -> Doc AnsiStyle
+resultsTree2doc (RLeaf result) = result2doc_ result
+resultsTree2doc (RNode children) = hsep $ punctuate comma (map resultsTree2doc children)
+
+ppResultsTreeInLine :: ResultsTree -> String
+ppResultsTreeInLine = render . resultsTree2doc
+
+ppResult :: Result -> String
+ppResult = render . result2doc
 
 render :: Doc AnsiStyle -> String
 render = unpack . renderStrict . layoutSmart defaultLayoutOptions

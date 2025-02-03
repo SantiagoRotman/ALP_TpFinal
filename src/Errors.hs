@@ -1,10 +1,6 @@
 {-|
 Module      : Errors
 Description : Definición del tipo de los errores
-Copyright   : (c) Mauro Jaskelioff, Guido Martínez, 2020.
-License     : GPL-3
-Maintainer  : mauro@fceia.unr.edu.ar
-Stability   : experimental
 
 -}
 

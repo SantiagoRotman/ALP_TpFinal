@@ -3,11 +3,7 @@
 {-|
 Module      : Parse
 Description : Define un parser de términos FD40 a términos fully named.
-Copyright   : (c) Mauro Jaskelioff, Guido Martínez, 2020.
-License     : GPL-3
-Maintainer  : mauro@fceia.unr.edu.ar
-Stability   : experimental
-
+ç
 -}
 
 module Parse (runP, P, program, expr) where
@@ -36,7 +32,7 @@ langDef = emptyDef {
          commentLine    = "%",
          --reservedNames = ["="],
          reservedOpNames = ["?-",":-",",",";",".","=","\\=","is",
-                            "+","-","*",">", ">=","print"]
+                            "+","-","*",">", ">=","print", "\\+"]
         }
 
 -- A utility parser that skips whitespace around a token
@@ -48,6 +44,9 @@ whiteSpace = Tok.whiteSpace lexer
 
 natural :: P Integer
 natural = Tok.natural lexer
+
+integer :: P Integer
+integer = Tok.integer lexer
 
 stringLiteral :: P String
 stringLiteral = Tok.stringLiteral lexer
@@ -98,7 +97,7 @@ surroundingSpaces p = do
   return res
 
 num :: P Int
-num = fromInteger <$> natural
+num = fromInteger <$> integer
 
 var :: P Variable
 var = variableP
@@ -141,8 +140,12 @@ cterm2 s t1 t2 = CTerm s [t1, t2]
 binarySugar :: String -> Assoc -> Operator String () Identity Term
 binarySugar s = Ex.Infix (reservedOp s >> return (cterm2 s))
 
+prefix :: String -> Operator String () Identity Term
+prefix s = Ex.Prefix (reservedOp s >> return (cterm1 s))
+
 tableSugar :: [[Operator String () Identity Term]]
-tableSugar = [[binarySugar "=" Ex.AssocLeft,
+tableSugar = [[prefix "\\+"],
+              [binarySugar "=" Ex.AssocLeft,
                binarySugar "\\=" Ex.AssocLeft,
                --binarySugar "is" Ex.AssocLeft,
                binarySugar ">" Ex.AssocLeft,
