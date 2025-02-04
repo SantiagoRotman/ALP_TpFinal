@@ -3,7 +3,7 @@
 
 {-|
 Module      : Lang
-Description : AST de términos, declaraciones y tipos
+Description : AST de términos, expresiones y tipos
 -}
 
 module Lang where
@@ -51,6 +51,9 @@ data Term =
   | CTerm Atom [Term] --- Complex Terms
   deriving (Show, Eq)
 
+applyToTerm :: (Term -> Term) -> Subst -> Subst
+applyToTerm f (v, t) = (v, f t)
+
 data BoolOp = Or | And
   deriving Show
 
@@ -58,7 +61,7 @@ data Tree op a = Node op (Tree op a) (Tree op a)
                | Leaf a
                deriving (Eq, Ord, Show)
 
-type TermOpTree = Tree BoolOp Term
+type TermOpTree = Tree BoolOp Term -- Objetivo
 
 data Expr =
     Fact Term
@@ -79,9 +82,12 @@ data GeneralTree a = RNode [GeneralTree a]
                    | RLeaf a
                    deriving (Eq, Show) 
 
-type Result = Maybe [Subst]
-type ResultsTree = GeneralTree Result
 
+-- Resultados
+type Result = Maybe [Subst] -- Resultado de unificar
+type ResultsTree = GeneralTree Result -- Resultado de probar un objetivo
+
+-- Funciones auxiliares
 treeMap :: (Result -> ResultsTree) -> ResultsTree -> ResultsTree
 treeMap f (RLeaf s) = f s
 treeMap f (RNode xs) = RNode $ map (treeMap f) xs

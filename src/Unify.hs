@@ -7,6 +7,7 @@ import Control.Monad.State
 import Data.Maybe
 
 import Global
+import Subst
 import BuiltIn
 import Debug.Trace
 
@@ -85,14 +86,6 @@ mergeSubstitutions' :: [Subst] -> Maybe [Subst] -> UnifyM Result
 mergeSubstitutions' xs = maybe (return Nothing) (mergeSubstitutions xs) 
 mergeSubstitutions'' :: Maybe [Subst] -> Maybe [Subst] -> UnifyM Result
 mergeSubstitutions'' mx my = maybe (return Nothing) (\a -> maybe (return Nothing) (mergeSubstitutions a) my) mx
-
-applySubstitutions :: Term -> [Subst] -> Term
-applySubstitutions = foldl applySubstitution
-
-applySubstitution :: Term -> Subst -> Term 
-applySubstitution t2@(TVar y) (x, t1) = if x == y then t1 else t2
-applySubstitution (CTerm thead body) subst  = CTerm thead (map (`applySubstitution` subst) body)
-applySubstitution t _ = t
 
 -----------------------------------------------------
 --                     Unify                       --

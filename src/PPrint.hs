@@ -4,6 +4,7 @@
 module PPrint where
 
 import Lang
+import Subst
 
 import Control.Monad.State
 import Data.Text ( unpack )
@@ -155,28 +156,6 @@ ppExpr :: Expr -> String
 ppExpr e = let (s, _) = runState (expr2doc e) (parenColList, 0) in render s
 
 ----- Results -----
-applySubstitutions :: Term -> [Subst] -> Term
-applySubstitutions = foldl applySubstitution
-
-applySubstitution :: Term -> Subst -> Term 
-applySubstitution t2@(TVar y) (x, t1) = if x == y then t1 else t2
-applySubstitution (CTerm thead body) subst  = CTerm thead (map (`applySubstitution` subst) body)
-applySubstitution t _ = t
-
-isByProductSubst :: Subst -> Bool
-isByProductSubst ('_':_, t) = False
-isByProductSubst _ = True
-
-aggregateSubsts :: [Subst] -> [Subst]
-aggregateSubsts [] = []
-aggregateSubsts (x:xs) = foldl aggregateSubst x xs : aggregateSubsts xs 
-
-aggregateSubst :: Subst -> Subst -> Subst
-aggregateSubst s@(x, TVar xy) (y, yt) = if xy == y then (x, yt) else s 
-aggregateSubst s1 s2 = s1
-
-applyToTerm :: (Term -> Term) -> Subst -> Subst
-applyToTerm f (v, t) = (v, f t)
 
 handleSubsts :: [Subst] -> [Subst]
 handleSubsts substs = let substs' = aggregateSubsts substs in filter isByProductSubst $ map (applyToTerm (`applySubstitutions` substs')) substs' 
