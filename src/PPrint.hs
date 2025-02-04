@@ -14,11 +14,9 @@ import Prettyprinter
       annotate,
       defaultLayoutOptions,
       layoutSmart,
-      nest, indent,
-      sep, vsep,
+      vsep,
       hcat,
       hsep,
-      parens,
       space,
       punctuate, comma, line,
       Doc,
@@ -57,6 +55,7 @@ colParens :: ColorTy -> Doc AnsiStyle -> Doc AnsiStyle
 colParens col doc = col (pretty "(") <> doc <> col (pretty ")")  
 
 -- | Lista de colores para parentesis
+parenColList :: [Doc AnsiStyle -> Doc AnsiStyle]
 parenColList = map annotate [colorDull Yellow, colorDull Magenta, colorDull Blue]
 
 constColor :: ColorTy
@@ -76,7 +75,7 @@ defaultColor = id
 
 -- | Pretty printer de nombres (Doc)
 atom2doc :: ColorTy -> Atom -> Doc AnsiStyle
-atom2doc color n = color (pretty n)
+atom2doc cl n = cl (pretty n)
 
 -- | Pretty printer de nombres (Doc)
 var2doc :: Variable -> Doc AnsiStyle
@@ -93,9 +92,9 @@ op2doc Or  = opColor (pretty ";")
 
 -- | Pretty printer de terminos (Doc)
 term2doc :: Term -> ParensColMonad (Doc AnsiStyle)
-term2doc (TConst const)    = return $ const2doc const
-term2doc (TAtom at)        = return $ atom2doc defaultColor at
-term2doc (TVar var)        = return $ var2doc var
+term2doc (TConst c)         = return $ const2doc c
+term2doc (TAtom at)         = return $ atom2doc defaultColor at
+term2doc (TVar var)         = return $ var2doc var
 term2doc (CTerm thead body) = do
   let thead' = atom2doc defaultColor thead
   parCol <- getCol
@@ -105,9 +104,9 @@ term2doc (CTerm thead body) = do
   return $ thead' <> colParens parCol body'
 
 termWithColor2doc :: ColorTy -> Term -> ParensColMonad (Doc AnsiStyle)
-termWithColor2doc col (TConst const)    = return $ const2doc const
-termWithColor2doc col (TAtom at)        = return $ atom2doc col at
-termWithColor2doc col (TVar var)        = return $ var2doc var
+termWithColor2doc col (TConst c)         = return $ const2doc c
+termWithColor2doc col (TAtom at)         = return $ atom2doc col at
+termWithColor2doc col (TVar var)         = return $ var2doc var
 termWithColor2doc col (CTerm thead body) = do
   let thead' = atom2doc col thead
   parCol <- getCol

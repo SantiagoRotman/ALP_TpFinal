@@ -24,6 +24,4 @@ div_helper(X, Y, Acc, Q) :-
 
 ?- factorial(8,F).
 
-?- fibonacci(4, X).
-
 ?- div(8,2,Z).

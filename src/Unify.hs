@@ -63,7 +63,8 @@ freshVar = do
 mergeSubstitution  :: Subst -> [Subst] -> UnifyM Result
 mergeSubstitution x [] = return $ Just [x]
 mergeSubstitution (v1, t1) ((v2, t2):ys) 
-    | v1 == v2 = do  -- Si las variables son iguales trato de unificar los terminos
+    | v1 == v2 && t1 == t2 = return $ Just [] -- Si esta repetida no es necesaria agregarla
+    | v1 == v2 = do -- Si las variables son iguales trato de unificar los terminos
         mxs <- unifyTerms t1 t2
         mys <- mergeSubstitution (v1, t1) ys
         return $ liftM2 (++) mxs mys
@@ -178,7 +179,7 @@ solveTermBuiltIn glbEnv i substs (CTerm "print" body) = do
     let xs = ppTerms $ map (`applySubstitutions` substs') body
     let xs' = map (\t -> ppTerm (applySubstitutions t substs')) body
     mapM_ (\s -> trace s (Just $ RLeaf Nothing)) xs'
-    return $ RLeaf $ Just (substs ++ [("_PRINT_", TConst (CString ( xs)))])
+    return $ RLeaf $ Just (substs ++ [("_PRINT_", TConst (CString xs))])
 solveTermBuiltIn glbEnv i substs _ = Nothing
 
 generalBinaryFun :: (Term -> Term -> Maybe a) -> (Maybe a -> Maybe ResultsTree) -> [Subst] -> Term -> Term -> Maybe ResultsTree

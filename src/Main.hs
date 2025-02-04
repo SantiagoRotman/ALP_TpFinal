@@ -116,12 +116,12 @@ handleExpr q@(Query tree) = do
               glb <- get
               opt <- getOpt 
               let a = runUnifier solveQuery glb q
-              printResultInteractive a
+              printResultInteractive a 1
           _ -> do
               printFD4 $ ppExpr q
               glb <- get
               let a = runUnifier solveQuery glb q
-              printFD4 $ ppResultsTree a
+              printResultInteractive a 2
 handleExpr e = do 
   --printFD4 $ ppExpr e
   addClause e
@@ -144,9 +144,9 @@ printResultInteractive' 2 (RLeaf x) = if isNothing x then return 2 else do
 printResultInteractive' _ (RLeaf x) = return 0
 printResultInteractive' skip (RNode xs) = foldM printResultInteractive' skip xs
 
-printResultInteractive :: (MonadPL m) => ResultsTree -> m ()
-printResultInteractive result = do 
-  a <- printResultInteractive' 1 result 
+printResultInteractive :: (MonadPL m) => ResultsTree -> Int -> m ()
+printResultInteractive result mode = do 
+  a <- printResultInteractive' mode result 
   case a of
     0 -> return ()
     _ -> printFD4 "false."

@@ -19,6 +19,8 @@ b(bb).
 % yes
 
 ?- loves(X,X) = loves(marcellus,mia).
+?- loves(X,X) = loves(mia,mia).
+
 
 ?- a(X), b(X), aa \= X. 
 
@@ -28,3 +30,4 @@ b(bb).
 ?- X is (5-4+3).
 
 ?- (8+4) > (4+15).
+?- (8+4) > (4+1).
