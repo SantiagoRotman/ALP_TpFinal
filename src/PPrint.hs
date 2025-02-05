@@ -173,7 +173,7 @@ subst2doc (var, t) = let (t',_) = runState (term2doc t) (parenColList, 0) in
     hsep [var2doc var, pretty "=", t'] 
 
 substs2doc :: [Subst] -> Doc AnsiStyle
-substs2doc xs = let xs' = map subst2doc (handleSubsts xs) in if null xs' then pretty "Yes" else getPrints xs <> hsep (punctuate comma xs')
+substs2doc xs = let xs' = map subst2doc (handleSubsts xs) in if null xs' then pretty "True" else getPrints xs <> hsep (punctuate comma xs')
 
 ppSubsts :: [Subst] -> String
 ppSubsts = render . substs2doc

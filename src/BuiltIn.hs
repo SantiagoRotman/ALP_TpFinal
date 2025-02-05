@@ -34,6 +34,13 @@ is_2 term1 term2 = do
     guard (term1 == TConst res)
     return []
 
+
+eq_2 :: Term -> Term -> Maybe Bool
+eq_2 term1 term2 = do 
+    e1 <- evalArithmetic term1
+    e2 <- evalArithmetic term2
+    return $ e1 == e2 
+
 gt_2 :: Term -> Term -> Maybe Bool
 gt_2 term1 term2 = do 
     e1 <- evalArithmetic term1

@@ -1,3 +1,24 @@
+% Basic
+'=\='(X,Y) :- \+ X =:= Y.
+'<='(X,Y) :- X =:= Y; X < Y.
+
+fibonacci(0, 0).
+fibonacci(1, 1).
+fibonacci(N, Result) :-
+    %print(fibonacci(N, Result)),
+    N > 1,
+    %print(aaa(N)),
+    N1 is N - 1,
+    %print(bbbb(N)),
+    N2 is N - 2,
+    %print(cccc(N)),
+    fibonacci(N1, R1),
+    %print(dddd(N,R2)),
+    fibonacci(N2, R2),
+    %print(results(N, R1, R2)),
+    Result is R1 + R2
+    .
+
 factorial(0, 1).
 factorial(1, 1).
 factorial(N, F) :- N > 0, N1 is N-1, factorial(N1, F1), F is (N*F1).
@@ -22,6 +43,12 @@ div_helper(X, Y, Acc, Q) :-
     div_helper(X1, Y, Acc1, Q).  % Recur with the new values
 
 
-?- factorial(8,F).
+%?- factorial(8,F).
 
-?- div(8,2,Z).
+%?- div(8,2,Z).
+?- fibonacci(0,X).
+?- fibonacci(1,X).
+?- fibonacci(2,X).
+?- fibonacci(3,X).
+?- fibonacci(4,X).
+?- fibonacci(8,X).

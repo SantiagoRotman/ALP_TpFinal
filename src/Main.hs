@@ -123,7 +123,7 @@ handleExpr q@(Query tree) = do
               let a = runUnifier solveQuery glb q
               printResultInteractive a 2
 handleExpr e = do 
-  --printFD4 $ ppExpr e
+  printFD4 $ ppExpr e
   addClause e
 
 printResultInteractive' :: (MonadPL m) => Int -> ResultsTree -> m Int

@@ -32,7 +32,8 @@ langDef = emptyDef {
          commentLine    = "%",
          --reservedNames = ["="],
          reservedOpNames = ["?-",":-",",",";",".","=","\\=","is",
-                            "+","-","*",">", ">=","print", "\\+"]
+                            "+","-","*",">", ">=","print", "\\+",
+                            "=:="]
         }
 
 -- A utility parser that skips whitespace around a token
@@ -144,17 +145,19 @@ prefix :: String -> Operator String () Identity Term
 prefix s = Ex.Prefix (reservedOp s >> return (cterm1 s))
 
 tableSugar :: [[Operator String () Identity Term]]
-tableSugar = [[prefix "\\+"],
+tableSugar = [[binarySugar "*" Ex.AssocLeft,
+               binarySugar "+" Ex.AssocLeft,
+               binarySugar "-" Ex.AssocLeft],
               [binarySugar "=" Ex.AssocLeft,
                binarySugar "\\=" Ex.AssocLeft,
-               --binarySugar "is" Ex.AssocLeft,
+               binarySugar "=:=" Ex.AssocLeft,
+               binarySugar "is" Ex.AssocLeft,
                binarySugar ">" Ex.AssocLeft,
                binarySugar ">=" Ex.AssocLeft,
                binarySugar "<" Ex.AssocLeft],
-              [binarySugar "*" Ex.AssocLeft,
-               binarySugar "+" Ex.AssocLeft,
-               binarySugar "-" Ex.AssocLeft],
-              [binarySugar "is" Ex.AssocLeft]]
+              [prefix "\\+"]
+             ]
+              --[binarySugar "is" Ex.AssocLeft]]
 
 builtIn :: P Term
 builtIn = Ex.buildExpressionParser tableSugar term' <?> "BuiltIn"

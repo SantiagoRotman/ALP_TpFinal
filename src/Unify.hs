@@ -130,13 +130,13 @@ unifyArgs _ _ = uFail
 
 solveExpr :: GlEnv -> Int -> [Subst] -> Term -> Expr -> ResultsTree
 solveExpr glbEnv i substs t1 (Fact t2) = let
-    (s, i') = runUnifyM (unifyTerms (applySubstitutions t1 substs) t2) i
+    (s, i') = runUnifyM (unifyTerms (applySubstitutions t1 substs) t2) i -- Unifico los terminos
     (s',_) = runUnifyM (mergeSubstitutions' substs s) i'
     in RLeaf s'
 solveExpr glbEnv i substs t (Rule thead body) = let
-    (substHead, i') = runUnifyM (unifyTerms (applySubstitutions t substs) thead) i
+    (substHead, i') = runUnifyM (unifyTerms (applySubstitutions t substs) thead) i -- Unifico el termino con la cabecera
     (substs', i'') = runUnifyM (mergeSubstitutions' substs substHead) i'
-    tree = maybe (RLeaf Nothing) (\a -> solveQueryTree glbEnv i'' a body) substs' --solveQueryTree' glbEnv i'' substs' body
+    tree = maybe (RLeaf Nothing) (\a -> solveQueryTree glbEnv i'' a body) substs' -- Soluciono el objetivo 
     in tree --treeApply (\a -> runUnifyM_ (mergeSubstitutions' substs a) i') tree
 solveExpr glbEnv i substs t (Query _) = RLeaf Nothing -- Queries no deberian ser parte de la KB
 
@@ -163,14 +163,17 @@ solveTermBuiltIn glbEnv i substs (CTerm "is" [t1,t2]) = do
     let result = is_2 (applySubstitutions t1 substs) (applySubstitutions t2 substs)
     --_ <- trace (show result) (Just $ RLeaf Nothing)
     result' <- runUnifyM_ (mergeSubstitutions' substs result) i
+    --_ <- trace (show result') (Just $ RLeaf Nothing)
     return $ RLeaf $ Just result'
 solveTermBuiltIn glbEnv i substs (CTerm ">" [t1,t2])  = generalBinaryFun gt_2 (boolToResult substs) substs t1 t2 
 solveTermBuiltIn glbEnv i substs (CTerm "<" [t1,t2])  = generalBinaryFun lt_2 (boolToResult substs) substs t1 t2  
+solveTermBuiltIn glbEnv i substs (CTerm "=:=" [t1,t2])  = generalBinaryFun eq_2 (boolToResult substs) substs t1 t2  
 solveTermBuiltIn glbEnv i substs (CTerm ">=" [t1,t2]) = generalBinaryFun gte_2 (boolToResult substs) substs t1 t2  
 solveTermBuiltIn glbEnv i substs (CTerm "print" body) = do
     let substs' = aggregateSubsts substs
     let xs = ppTerms $ map (`applySubstitutions` substs') body
     let xs' = map (\t -> ppTerm (applySubstitutions t substs')) body
+    _ <- trace (show (filter (not . isPrint) substs)) (Just $ RLeaf Nothing)
     mapM_ (\s -> trace s (Just $ RLeaf Nothing)) xs'
     return $ RLeaf $ Just (substs ++ [("_PRINT_", TConst (CString xs))])
 solveTermBuiltIn glbEnv i substs _ = Nothing
