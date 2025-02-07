@@ -96,6 +96,10 @@ treeApply :: (Result -> Result) -> ResultsTree -> ResultsTree
 treeApply f (RLeaf i s)  = RLeaf i $ f s
 treeApply f (RNode xs) = RNode $ map (treeApply f) xs
 
+treeSize :: ResultsTree -> Int
+treeSize (RLeaf i s) = 1
+treeSize (RNode xs) = foldl (+) 1 $ map treeSize xs
+
 isNotEmptyLeaf :: ResultsTree -> Bool
 isNotEmptyLeaf (RLeaf i Nothing) = False
 isNotEmptyLeaf (RLeaf _  _) = True

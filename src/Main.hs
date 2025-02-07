@@ -116,11 +116,13 @@ handleExpr q@(Query tree) = do
               glb <- get
               opt <- getOpt 
               let a = runUnifier solveQuery glb q
+              --printFD4 . show $ treeSize a 
               printResultInteractive a 1
           _ -> do
               printFD4 $ ppExpr q
               glb <- get
               let a = runUnifier solveQuery glb q
+              --printFD4 . show $ treeSize a 
               printResultInteractive a 2
 handleExpr e = do 
   printFD4 $ ppExpr e
