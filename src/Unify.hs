@@ -131,51 +131,48 @@ unifyArgs _ _ = uFail
 solveExpr :: GlEnv -> Int -> [Subst] -> Term -> Expr -> ResultsTree
 solveExpr glbEnv i substs t1 (Fact t2) = let
     (s, i') = runUnifyM (unifyTerms (applySubstitutions t1 substs) t2) i -- Unifico los terminos
-    (s',_) = runUnifyM (mergeSubstitutions' substs s) i'
-    in RLeaf s'
+    (s',i'') = runUnifyM (mergeSubstitutions' substs s) i'
+    in RLeaf i'' s'
 solveExpr glbEnv i substs t (Rule thead body) = let
     (substHead, i') = runUnifyM (unifyTerms (applySubstitutions t substs) thead) i -- Unifico el termino con la cabecera
     (substs', i'') = runUnifyM (mergeSubstitutions' substs substHead) i'
-    tree = maybe (RLeaf Nothing) (\a -> solveQueryTree glbEnv i'' a body) substs' -- Soluciono el objetivo 
-    in tree --treeApply (\a -> runUnifyM_ (mergeSubstitutions' substs a) i') tree
-solveExpr glbEnv i substs t (Query _) = RLeaf Nothing -- Queries no deberian ser parte de la KB
+    in maybe (RLeaf i'' Nothing) (\a -> solveQueryTree glbEnv i'' a body) substs' -- Soluciono el objetivo 
+solveExpr glbEnv i substs t (Query _) = RLeaf i Nothing -- Queries no deberian ser parte de la KB
 
 -----------------------------------------------------
 --                    SolveTerm                    --
 -----------------------------------------------------
 
 solveTermBuiltIn :: GlEnv -> Int -> [Subst] -> Term -> Maybe ResultsTree
+solveTermBuiltIn glbEnv i substs (CTerm ">" [t1,t2])  = generalBinaryFun gt_2 (boolToResult i substs) substs t1 t2 
+solveTermBuiltIn glbEnv i substs (CTerm "<" [t1,t2])  = generalBinaryFun lt_2 (boolToResult i substs) substs t1 t2  
+solveTermBuiltIn glbEnv i substs (CTerm ">=" [t1,t2]) = generalBinaryFun gte_2 (boolToResult i substs) substs t1 t2  
+solveTermBuiltIn glbEnv i substs (CTerm "=:=" [t1,t2]) = generalBinaryFun eq_2 (boolToResult i substs) substs t1 t2 
+solveTermBuiltIn glbEnv i substs (CTerm "is" [t1,t2]) = do
+    let result = is_2 (applySubstitutions t1 substs) (applySubstitutions t2 substs)
+    let (result', i') = runUnifyM (mergeSubstitutions' substs result) i
+    return $ RLeaf i' result' 
 solveTermBuiltIn glbEnv i substs (CTerm "=" [t1,t2]) = do  
     let (result, i') = runUnifyM (unifyTerms (applySubstitutions t1 substs) (applySubstitutions t2 substs)) i
     result' <- runUnifyM_ (mergeSubstitutions' substs result) i'
-    return $ RLeaf $ Just result'
+    return $ RLeaf i' $ Just result'
 solveTermBuiltIn glbEnv i substs (CTerm "\\=" [t1,t2]) = do
-    let result = runUnifyM_ (unifyTerms (applySubstitutions t1 substs) (applySubstitutions t2 substs)) 0
+    let (result, i') = runUnifyM (unifyTerms (applySubstitutions t1 substs) (applySubstitutions t2 substs)) 0
     case result of
-        Just xs -> return $ RLeaf Nothing
-        Nothing -> return $ RLeaf $ Just substs
+        Just xs -> return $ RLeaf i' Nothing
+        Nothing -> return $ RLeaf i' $ Just substs
 solveTermBuiltIn glbEnv i substs (CTerm "\\+" [t]) = do
     let result = solveTerm glbEnv i substs (applySubstitutions t substs)
     if hasResult result 
-        then return $ RLeaf Nothing
-        else return $ RLeaf $ Just substs
-solveTermBuiltIn glbEnv i substs (CTerm "is" [t1,t2]) = do
-    let result = is_2 (applySubstitutions t1 substs) (applySubstitutions t2 substs)
-    --_ <- trace (show result) (Just $ RLeaf Nothing)
-    result' <- runUnifyM_ (mergeSubstitutions' substs result) i
-    --_ <- trace (show result') (Just $ RLeaf Nothing)
-    return $ RLeaf $ Just result'
-solveTermBuiltIn glbEnv i substs (CTerm ">" [t1,t2])  = generalBinaryFun gt_2 (boolToResult substs) substs t1 t2 
-solveTermBuiltIn glbEnv i substs (CTerm "<" [t1,t2])  = generalBinaryFun lt_2 (boolToResult substs) substs t1 t2  
-solveTermBuiltIn glbEnv i substs (CTerm "=:=" [t1,t2])  = generalBinaryFun eq_2 (boolToResult substs) substs t1 t2  
-solveTermBuiltIn glbEnv i substs (CTerm ">=" [t1,t2]) = generalBinaryFun gte_2 (boolToResult substs) substs t1 t2  
+        then return $ RLeaf i Nothing
+        else return $ RLeaf i $ Just substs
 solveTermBuiltIn glbEnv i substs (CTerm "print" body) = do
     let substs' = aggregateSubsts substs
     let xs = ppTerms $ map (`applySubstitutions` substs') body
-    let xs' = map (\t -> ppTerm (applySubstitutions t substs')) body
-    _ <- trace (show (filter (not . isPrint) substs)) (Just $ RLeaf Nothing)
-    mapM_ (\s -> trace s (Just $ RLeaf Nothing)) xs'
-    return $ RLeaf $ Just (substs ++ [("_PRINT_", TConst (CString xs))])
+    --let xs' = map (\t -> ppTerm (applySubstitutions t substs')) body
+    --_ <- trace (show (filter (not . isPrint) substs)) (Just $ RLeaf Nothing)
+    --mapM_ (\s -> trace s (Just $ RLeaf i Nothing)) xs'
+    return $ RLeaf i $ Just (substs ++ [("_PRINT_", TConst (CString xs))])
 solveTermBuiltIn glbEnv i substs _ = Nothing
 
 generalBinaryFun :: (Term -> Term -> Maybe a) -> (Maybe a -> Maybe ResultsTree) -> [Subst] -> Term -> Term -> Maybe ResultsTree
@@ -185,7 +182,7 @@ solveTermKB :: GlEnv -> Int -> [Subst] -> Term -> ResultsTree
 solveTermKB glbEnv i substs t = let
     clauses = getClauses' glbEnv i
     results = filter isNotEmptyLeaf $ map (solveExpr glbEnv (i+1) substs t) clauses
-    in if null results then RLeaf Nothing else RNode results
+    in if null results then RLeaf i Nothing else RNode results
 
 solveTerm :: GlEnv -> Int -> [Subst] -> Term -> ResultsTree
 solveTerm glbEnv i s t | if getTrace glbEnv then
@@ -201,7 +198,7 @@ solveTerm glbEnv i substs t = fromMaybe (solveTermKB glbEnv i substs t) (solveTe
 solveQueryTree :: GlEnv -> Int -> [Subst] -> TermOpTree -> ResultsTree
 solveQueryTree glbEnv i substs (Node And l r) = let
     lSubsts = solveQueryTree glbEnv i substs l
-    in treeMap (maybe (RLeaf Nothing) (\a -> solveQueryTree glbEnv i a r)) lSubsts
+    in treeMap (\x -> maybe (RLeaf x Nothing) (\a -> solveQueryTree glbEnv x a r)) lSubsts
     --in treeMap (\a -> solveQueryTree' glbEnv i a r)  
 solveQueryTree glbEnv i substs (Node Or l r) = let 
     lSubsts = solveQueryTree glbEnv i substs l
@@ -212,7 +209,7 @@ solveQueryTree glbEnv i substs (Leaf a) = solveTerm glbEnv i substs a
 solveQuery :: GlEnv -> Int -> Expr -> ResultsTree
 solveQuery glbEnv i q | if getTrace glbEnv then trace ("solveQuery: " ++ show i ++ " " ++ show q) False else False = undefined
 solveQuery glbEnv i (Query tree) = solveQueryTree glbEnv i [] tree
-solveQuery glbEnv i e = RLeaf Nothing
+solveQuery glbEnv i e = RLeaf i Nothing
 
 runUnifier :: (GlEnv -> Int -> a -> ResultsTree) -> GlEnv -> a -> ResultsTree
 runUnifier unifier glbEnv x = unifier glbEnv 0 x 

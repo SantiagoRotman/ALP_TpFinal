@@ -79,7 +79,7 @@ type Module = [Expr]
 type Subst = (Variable, Term)
 
 data GeneralTree a = RNode [GeneralTree a]
-                   | RLeaf a
+                   | RLeaf Int a
                    deriving (Eq, Show) 
 
 
@@ -88,20 +88,20 @@ type Result = Maybe [Subst] -- Resultado de unificar
 type ResultsTree = GeneralTree Result -- Resultado de probar un objetivo
 
 -- Funciones auxiliares
-treeMap :: (Result -> ResultsTree) -> ResultsTree -> ResultsTree
-treeMap f (RLeaf s) = f s
+treeMap :: (Int -> Result -> ResultsTree) -> ResultsTree -> ResultsTree
+treeMap f (RLeaf i s) = f i s
 treeMap f (RNode xs) = RNode $ map (treeMap f) xs
 
 treeApply :: (Result -> Result) -> ResultsTree -> ResultsTree
-treeApply f (RLeaf s)  = RLeaf $ f s
+treeApply f (RLeaf i s)  = RLeaf i $ f s
 treeApply f (RNode xs) = RNode $ map (treeApply f) xs
 
 isNotEmptyLeaf :: ResultsTree -> Bool
-isNotEmptyLeaf (RLeaf Nothing) = False
-isNotEmptyLeaf (RLeaf _) = True
+isNotEmptyLeaf (RLeaf i Nothing) = False
+isNotEmptyLeaf (RLeaf _  _) = True
 isNotEmptyLeaf _ = True
 
 hasResult :: ResultsTree -> Bool
-hasResult (RLeaf (Just xs)) = True
+hasResult (RLeaf i (Just xs)) = True
 hasResult (RNode xs) = any hasResult xs
 hasResult _ = False

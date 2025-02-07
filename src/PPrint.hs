@@ -184,7 +184,7 @@ result2doc (Just []) = pretty "True" <> line
 result2doc (Just xs) = substs2doc xs <> line
 
 ppResultsTree :: ResultsTree -> String
-ppResultsTree (RLeaf result) = render $ result2doc result
+ppResultsTree (RLeaf _ result) = render $ result2doc result
 ppResultsTree (RNode children) = concatMap ppResultsTree children
 
 result2doc_ :: Result -> Doc AnsiStyle
@@ -193,7 +193,7 @@ result2doc_ (Just []) = pretty "True"
 result2doc_ (Just xs) = substs2doc xs 
 
 resultsTree2doc :: ResultsTree -> Doc AnsiStyle
-resultsTree2doc (RLeaf result) = result2doc_ result
+resultsTree2doc (RLeaf _ result) = result2doc_ result
 resultsTree2doc (RNode children) = hsep $ punctuate comma (map resultsTree2doc children)
 
 ppResultsTreeInLine :: ResultsTree -> String

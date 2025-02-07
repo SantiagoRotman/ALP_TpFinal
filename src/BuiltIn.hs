@@ -59,7 +59,7 @@ lt_2 term1 term2 = do
     e2 <- evalArithmetic term2
     return $ e1 < e2 
 
-boolToResult :: [Subst] -> Maybe Bool -> Maybe ResultsTree
-boolToResult substs (Just True) = return $ RLeaf $ Just substs
-boolToResult substs (Just False) = return $ RLeaf Nothing
-boolToResult substs Nothing = Nothing
+boolToResult :: Int -> [Subst] -> Maybe Bool -> Maybe ResultsTree
+boolToResult i substs (Just True) = return $ RLeaf i $ Just substs
+boolToResult i substs (Just False) = return $ RLeaf i Nothing
+boolToResult i substs Nothing = Nothing

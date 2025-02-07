@@ -127,8 +127,8 @@ handleExpr e = do
   addClause e
 
 printResultInteractive' :: (MonadPL m) => Int -> ResultsTree -> m Int
-printResultInteractive' 0 (RLeaf x) = return 0
-printResultInteractive' 1 (RLeaf x) = if isNothing x then return 1 else do 
+printResultInteractive' 0 (RLeaf _ x) = return 0
+printResultInteractive' 1 (RLeaf _ x) = if isNothing x then return 1 else do 
   liftIO . putStr $ ppResult x
   liftIO $ hSetBuffering stdin NoBuffering  -- Set no buffering, so input is immediately available
   liftIO $ hSetEcho stdin False
@@ -138,10 +138,10 @@ printResultInteractive' 1 (RLeaf x) = if isNothing x then return 1 else do
       ' '  -> return 1
       'a'  -> return 2
       c    -> return 0
-printResultInteractive' 2 (RLeaf x) = if isNothing x then return 2 else do 
+printResultInteractive' 2 (RLeaf _ x) = if isNothing x then return 2 else do 
   liftIO . putStr $ ppResult x
   return 2
-printResultInteractive' _ (RLeaf x) = return 0
+printResultInteractive' _ (RLeaf _ x) = return 0
 printResultInteractive' skip (RNode xs) = foldM printResultInteractive' skip xs
 
 printResultInteractive :: (MonadPL m) => ResultsTree -> Int -> m ()
