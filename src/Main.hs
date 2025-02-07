@@ -104,15 +104,15 @@ compileFile f = do
     setTrace $ m == Debug 
     when i $ printFD4 ("Abriendo "++f++"...")
     expresions <- loadFile f
-    mapM_ handleExpr expresions
+    mapM_ (handleExpr True) expresions
     setInter i
 
-handleExpr ::  MonadPL m => Expr -> m ()
-handleExpr q@(Query tree) = do
+handleExpr :: MonadPL m => Bool -> Expr -> m ()
+handleExpr b q@(Query tree) = do
         m <- getMode
         case m of
           Interactive -> do
-              --printFD4 $ ppExpr q
+              when b $ printFD4 (ppExpr q)
               glb <- get
               opt <- getOpt 
               let a = runUnifier solveQuery glb q
@@ -124,7 +124,7 @@ handleExpr q@(Query tree) = do
               let a = runUnifier solveQuery glb q
               --printFD4 . show $ treeSize a 
               printResultInteractive a 2
-handleExpr e = do 
+handleExpr b e = do 
   --printFD4 $ ppExpr e
   addClause e
 
@@ -248,4 +248,4 @@ handleCommand cmd = do
 compilePhrase ::  MonadPL m => String -> m ()
 compilePhrase x = do
     dot <- parseIO "<interactive>" expr x
-    handleExpr dot
+    handleExpr False dot
