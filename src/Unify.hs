@@ -57,7 +57,7 @@ freshVar = do
     put (n+1)
     return $ TVar ("_" ++ show n)
 
------------------------------------------------------
+----------------------------------------------------- 
 --                 Substitutions                   --
 -----------------------------------------------------
 
@@ -65,22 +65,20 @@ mergeSubstitution  :: Subst -> [Subst] -> UnifyM Result
 mergeSubstitution x [] = return $ Just [x]
 mergeSubstitution (v1, t1) ((v2, t2):ys) 
     | v1 == v2 && t1 == t2 = return $ Just [] -- Si esta repetida no es necesaria agregarla
-    | v1 == v2 = do -- Si las variables son iguales trato de unificar los terminos
+    | v1 == v2 = unifyTerms t1 t2 -- Si las variables son iguales trato de unificar los terminos
+        {-do 
         mxs <- unifyTerms t1 t2
         mys <- mergeSubstitution (v1, t1) ys
-        return $ liftM2 (++) mxs mys
+        return mxs -- $ liftM2 (++) mxs mys -}
     | otherwise = mergeSubstitution (v1, t1) ys
 
 mergeSubstitutions :: [Subst] -> [Subst] -> UnifyM Result
 mergeSubstitutions [] ys = return $ Just ys
 mergeSubstitutions xs [] = return $ Just xs
 mergeSubstitutions (x:xs) ys = do
-    --trace ("ms: " ++ (show (x:xs)) ++ " - " ++ (show ys)) (return [])
     newSubst <- mergeSubstitution x ys
     res <- mergeSubstitutions xs ys
-    let aux = liftM2 (++) newSubst res
-    --trace (show aux) (return [])
-    return aux
+    return $ liftM2 (++) newSubst res
 
 mergeSubstitutions' :: [Subst] -> Maybe [Subst] -> UnifyM Result
 mergeSubstitutions' xs = maybe (return Nothing) (mergeSubstitutions xs) 

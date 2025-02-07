@@ -1,10 +1,10 @@
-{-# OPTIONS_GHC -Wincomplete-patterns #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns #-}
 
 module BuiltIn where
 
 import Prelude hiding ( const )
 import Control.Monad
-import Debug.Trace
+--import Debug.Trace
 import Lang
 
 instance Num Const where

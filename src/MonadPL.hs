@@ -19,6 +19,7 @@ module MonadPL (
   failPosFD4,
   failFD4,
   addClause,
+  getClauses,
   catchErrors,
   MonadPL,
   module Control.Monad.Except,

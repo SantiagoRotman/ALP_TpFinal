@@ -22,7 +22,7 @@ import Options.Applicative
 
 import Parse ( P, runP, program, expr )
 import Unify (runUnifier, solveQuery)
-import PPrint (ppExpr, ppResult, ppResultsTree)
+import PPrint (ppExpr, ppResult)
 import Global
 import Errors
 import Lang
@@ -112,7 +112,7 @@ handleExpr q@(Query tree) = do
         m <- getMode
         case m of
           Interactive -> do
-              printFD4 $ ppExpr q
+              --printFD4 $ ppExpr q
               glb <- get
               opt <- getOpt 
               let a = runUnifier solveQuery glb q
@@ -125,7 +125,7 @@ handleExpr q@(Query tree) = do
               --printFD4 . show $ treeSize a 
               printResultInteractive a 2
 handleExpr e = do 
-  printFD4 $ ppExpr e
+  --printFD4 $ ppExpr e
   addClause e
 
 printResultInteractive' :: (MonadPL m) => Int -> ResultsTree -> m Int
@@ -230,8 +230,10 @@ handleCommand cmd = do
        Quit   ->  return False
        Noop   ->  return True
        Help   ->  printFD4 (helpTxt commands) >> return True
-       Browse ->  return True --do  printFD4 (unlines (reverse (nub (map declName glb))))
-                              --  return True
+       Browse ->  do 
+                    clauses <- getClauses
+                    mapM_ (printFD4 . ppExpr) clauses
+                    return True
        Compile c ->
                   do  case c of
                           CompileInteractive e -> compilePhrase e

@@ -42,4 +42,4 @@ div_helper(X, Y, Acc, Q) :-
 
 ?- div(8,2,Z).
 
-?- fibonacci(15,X).
+?- fibonacci(13,X).
