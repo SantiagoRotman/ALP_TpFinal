@@ -12,6 +12,7 @@ instance Num Const where
     (CInt x) - (CInt y) = CInt (x - y)
     (CInt x) * (CInt y) = CInt (x * y)
     abs (CInt x) = CInt (abs x)
+    fromInteger = CInt . fromInteger
     signum (CInt x) = CInt (signum x)
     negate (CInt x) = CInt (negate x)
 
@@ -19,11 +20,10 @@ instance Ord Const where
     compare (CInt x) (CInt y) = compare x y
 
 evalArithmetic :: Term -> Maybe Const 
-evalArithmetic (TConst c) = Just c
+evalArithmetic (TConst (CInt c))  = Just (CInt c)
 evalArithmetic (CTerm "+" [x, y]) = (+) <$> evalArithmetic x <*> evalArithmetic y
 evalArithmetic (CTerm "-" [x, y]) = (-) <$> evalArithmetic x <*> evalArithmetic y
 evalArithmetic (CTerm "*" [x, y]) = (*) <$> evalArithmetic x <*> evalArithmetic y
-    --(evalArithmetic x) + (evalArithmetic y)
 evalArithmetic _ = Nothing
 
 

@@ -41,7 +41,7 @@ type Variable = String
 --type Variable = Bound !Int
 
 data Const = CInt Int
-              | CString String
+           | CString String
   deriving (Show, Eq)
 
 data Term =
