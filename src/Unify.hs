@@ -37,6 +37,7 @@ getClauses' env n = let
     expr = glb env
     in map (replaceVarExpr (n+1)) expr
 
+-- Remplaza los nombres de las variables de la KB por unos unicos
 replaceVarExpr :: Int -> Expr -> Expr
 replaceVarExpr i (Fact t) = Fact (replaceVarTerm i t)
 replaceVarExpr i (Rule t tree) = Rule (replaceVarTerm i t) (replaceVarTree i tree)
@@ -126,6 +127,7 @@ unifyArgs _ _ = uFail
 --                    solveExpr                    --
 -----------------------------------------------------
 
+-- Soluciona un termino contra una expresion
 solveExpr :: GlEnv -> Int -> [Subst] -> Term -> Expr -> ResultsTree
 solveExpr glbEnv i substs t1 (Fact t2) = let
     (s, i') = runUnifyM (unifyTerms (applySubstitutions t1 substs) t2) i -- Unifico los terminos
@@ -141,6 +143,7 @@ solveExpr glbEnv i substs t (Query _) = RLeaf i Nothing -- Queries no deberian s
 --                    SolveTerm                    --
 -----------------------------------------------------
 
+-- Si el termino es uno de los BuiltIn, lo soluciona con su comportamiento especial, si no falla
 solveTermBuiltIn :: GlEnv -> Int -> [Subst] -> Term -> Maybe ResultsTree
 solveTermBuiltIn glbEnv i substs (CTerm ">" [t1,t2])  = generalBinaryFun gt_2 (boolToResult i substs) substs t1 t2 
 solveTermBuiltIn glbEnv i substs (CTerm "<" [t1,t2])  = generalBinaryFun lt_2 (boolToResult i substs) substs t1 t2  
@@ -176,12 +179,15 @@ solveTermBuiltIn glbEnv i substs _ = Nothing
 generalBinaryFun :: (Term -> Term -> Maybe a) -> (Maybe a -> Maybe ResultsTree) -> [Subst] -> Term -> Term -> Maybe ResultsTree
 generalBinaryFun fun converter substs t1 t2 = converter $ fun (applySubstitutions t1 substs) (applySubstitutions t2 substs)
 
+-- Trata de solucionar un termino contra toda la KB
 solveTermKB :: GlEnv -> Int -> [Subst] -> Term -> ResultsTree
 solveTermKB glbEnv i substs t = let
     clauses = getClauses' glbEnv i
     results = filter isNotEmptyLeaf $ map (solveExpr glbEnv (i+1) substs t) clauses
     in if null results then RLeaf i Nothing else RNode results
 
+-- Si es uno de los terminos BuiltIn lo soluciona con su comportamiento especial
+--    si no lo trata de solucionar contra la KB
 solveTerm :: GlEnv -> Int -> [Subst] -> Term -> ResultsTree
 solveTerm glbEnv i s t | if getTrace glbEnv then
                              trace ("solveTerm: " ++ show i ++ ", " ++ ppTerm (applySubstitutions t s) 
@@ -193,14 +199,16 @@ solveTerm glbEnv i substs t = fromMaybe (solveTermKB glbEnv i substs t) (solveTe
 --                    SolveQuery                   --
 -----------------------------------------------------
 
+-- Soluciona un objetivo 
 solveQueryTree :: GlEnv -> Int -> [Subst] -> TermOpTree -> ResultsTree
 solveQueryTree glbEnv i substs (Node And l r) = let
     lSubsts = solveQueryTree glbEnv i substs l
+    -- Trato de solucionar el lado derecho con los resultados no vacios generados por el arbol izquierdo
     in treeMap (\x -> maybe (RLeaf x Nothing) (\a -> solveQueryTree glbEnv x a r)) lSubsts
-    --in treeMap (\a -> solveQueryTree' glbEnv i a r)  
 solveQueryTree glbEnv i substs (Node Or l r) = let 
     lSubsts = solveQueryTree glbEnv i substs l
     rSubsts = solveQueryTree glbEnv i substs r
+    -- Ambos lados son soluciones posible
     in RNode [lSubsts, rSubsts]
 solveQueryTree glbEnv i substs (Leaf a) = solveTerm glbEnv i substs a
 
