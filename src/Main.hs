@@ -107,6 +107,7 @@ compileFile f = do
     mapM_ (handleExpr True) expresions
     setInter i
 
+-- Maneja las expresiones, corre las consultas y agrega las otras a la KB
 handleExpr :: MonadPL m => Bool -> Expr -> m ()
 handleExpr b q@(Query tree) = do
         m <- getMode
@@ -128,6 +129,21 @@ handleExpr b e = do
   --printFD4 $ ppExpr e
   addClause e
 
+------------------------------------------
+-- Interactivo - Impresion de resultados
+------------------------------------------
+
+-- Imprime un resultado de una consulta, lleva un estado que es: 
+--    0 Si debe cortar
+--    1 Si debe preguntar al usuario si quiere el siguiente resultado
+--    2 Si debe imprimir todo  
+printResultInteractive :: (MonadPL m) => ResultsTree -> Int -> m ()
+printResultInteractive result mode = do 
+  a <- printResultInteractive' mode result 
+  case a of
+    0 -> return ()
+    _ -> printFD4 "false."
+
 printResultInteractive' :: (MonadPL m) => Int -> ResultsTree -> m Int
 printResultInteractive' 0 (RLeaf _ x) = return 0
 printResultInteractive' 1 (RLeaf _ x) = if isNothing x then return 1 else do 
@@ -146,20 +162,13 @@ printResultInteractive' 2 (RLeaf _ x) = if isNothing x then return 2 else do
 printResultInteractive' _ (RLeaf _ x) = return 0
 printResultInteractive' skip (RNode xs) = foldM printResultInteractive' skip xs
 
-printResultInteractive :: (MonadPL m) => ResultsTree -> Int -> m ()
-printResultInteractive result mode = do 
-  a <- printResultInteractive' mode result 
-  case a of
-    0 -> return ()
-    _ -> printFD4 "false."
-
 parseIO ::  MonadPL m => String -> P a -> String -> m a
 parseIO filename p x = case runP p x filename of
                   Left e  -> throwError (ParseErr e)
                   Right r -> return r
 
 ------------------------------------------
--- Interactivo
+-- Interactivo - Manejo de comandos
 ------------------------------------------
 
 data Command = Compile CompileForm
